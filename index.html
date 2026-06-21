@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>🐾 Pet Finder Pro</title>
+    <title>🐾 Pet Finder Pro - Real Time</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #0a0e14; color: #e8edf5; min-height: 100vh; display: flex; justify-content: center; padding: 16px; }
@@ -49,17 +49,27 @@
         .admin-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
         .admin-row select, .admin-row input { padding: 8px 14px; background: #0f1620; border: 1px solid #2a3340; border-radius: 8px; color: #e8edf5; font-size: 14px; }
         .admin-row .btn-gen { background: #2a7de1; border: 0; color: white; padding: 8px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .admin-row .btn-gen:hover { background: #3f8ef5; }
         .token-list { margin-top: 12px; }
         .token-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #0f1620; border-radius: 8px; margin-bottom: 4px; font-size: 13px; flex-wrap: wrap; gap: 4px; }
         .token-item .code { font-family: monospace; color: #a0d6ff; }
         .token-item .used { color: #ff6b6b; font-size: 11px; }
         .token-item .valid { color: #8bffb0; font-size: 11px; }
         .token-item .delete-btn { background: #4a1a1a; border: 0; color: #ff9a9a; padding: 2px 10px; border-radius: 30px; cursor: pointer; font-size: 11px; }
+        .token-item .delete-btn:hover { background: #6a2a2a; }
         .footer { text-align: center; font-size: 11px; color: #3a4a5a; margin-top: 20px; padding-top: 16px; border-top: 1px solid #1a232e; }
         .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
         .info-item { background: #0f1620; padding: 10px 14px; border-radius: 10px; border-left: 3px solid #2a7de1; }
-        .info-item .label { font-size: 11px; color: #7a8aa3; text-transform: uppercase; }
+        .info-item .label { font-size: 11px; color: #7a8aa3; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-item .value { font-size: 15px; font-weight: 600; color: #e8edf5; margin-top: 2px; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .pricing-card { background: #0f1620; padding: 14px; border-radius: 12px; text-align: center; border: 1px solid #2a3340; }
+        .pricing-card.popular { border: 2px solid #ffd700; }
+        .pricing-card .duration { font-size: 20px; font-weight: 700; color: #a0d6ff; }
+        .pricing-card .price { font-size: 13px; color: #7a8aa3; margin: 4px 0; }
+        .pricing-card .btn-buy { background: #2a7de1; border: 0; color: white; padding: 6px 20px; border-radius: 40px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .pricing-card .btn-buy:hover { background: #3f8ef5; }
+        .loading-text { text-align: center; padding: 20px; color: #7a8aa3; }
         @media (max-width: 500px) { .pet-row { gap: 4px 8px; } .server-id { font-size: 10px; } }
     </style>
 </head>
@@ -69,7 +79,7 @@
     <div id="loginPage">
         <div class="logo">🐾</div>
         <h1>Pet Finder Pro</h1>
-        <div class="sub">Grow a Garden 2 • Live Tracker</div>
+        <div class="sub">Grow a Garden 2 • Real-Time Data</div>
         <div class="login-box">
             <label>🔑 Masukkan Token Akses</label>
             <input type="text" id="tokenInput" placeholder="Contoh: TOKEN-ABC123XYZ" />
@@ -90,18 +100,20 @@
             </div>
         </div>
 
-        <!-- WEATHER & INFO -->
+        <!-- WEATHER & INFO (Real-time dari GAGAPI) -->
         <div class="section">
             <div class="info-grid">
-                <div class="info-item"><div class="label">🌤 Weather</div><div class="value" id="weatherNow">Sunny</div></div>
-                <div class="info-item"><div class="label">🌱 Seed Stock</div><div class="value" id="seedStock">1,247</div></div>
-                <div class="info-item"><div class="label">⚙️ Gear Stock</div><div class="value" id="gearStock">432</div></div>
-                <div class="info-item"><div class="label">👥 Online</div><div class="value" id="onlinePlayers">1,283</div></div>
+                <div class="info-item"><div class="label">🌤 Weather</div><div class="value" id="weatherNow">Loading...</div></div>
+                <div class="info-item"><div class="label">🌱 Seed Stock</div><div class="value" id="seedStock">Loading...</div></div>
+                <div class="info-item"><div class="label">⚙️ Gear Stock</div><div class="value" id="gearStock">Loading...</div></div>
+                <div class="info-item"><div class="label">🥚 Egg Stock</div><div class="value" id="eggStock">Loading...</div></div>
             </div>
         </div>
 
         <!-- PET CONTENT -->
-        <div id="petContent"></div>
+        <div id="petContent">
+            <div class="loading-text">⏳ Mengambil data real-time...</div>
+        </div>
 
         <!-- ADMIN PANEL -->
         <div id="adminPanel">
@@ -126,201 +138,94 @@
             <div class="section-header">
                 <span class="section-title">💳 Beli Akses</span>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
-                <div style="background:#0f1620;padding:14px;border-radius:12px;text-align:center;border:1px solid #2a3340;">
-                    <div style="font-size:20px;font-weight:700;color:#a0d6ff;">3 Hari</div>
-                    <div style="font-size:13px;color:#7a8aa3;margin:4px 0;">Rp 10.000</div>
-                    <button class="btn-join" onclick="buyAccess(3)">Beli</button>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="duration">3 Hari</div>
+                    <div class="price">Rp 10.000</div>
+                    <button class="btn-buy" onclick="buyAccess(3)">Beli</button>
                 </div>
-                <div style="background:#0f1620;padding:14px;border-radius:12px;text-align:center;border:2px solid #ffd700;">
-                    <div style="font-size:20px;font-weight:700;color:#ffd700;">7 Hari</div>
-                    <div style="font-size:13px;color:#7a8aa3;margin:4px 0;">Rp 20.000</div>
-                    <button class="btn-join" onclick="buyAccess(7)">Beli</button>
+                <div class="pricing-card popular">
+                    <div class="duration" style="color:#ffd700;">7 Hari</div>
+                    <div class="price">Rp 20.000</div>
+                    <button class="btn-buy" onclick="buyAccess(7)">Beli</button>
                 </div>
-                <div style="background:#0f1620;padding:14px;border-radius:12px;text-align:center;border:1px solid #2a3340;">
-                    <div style="font-size:20px;font-weight:700;color:#a0d6ff;">15 Hari</div>
-                    <div style="font-size:13px;color:#7a8aa3;margin:4px 0;">Rp 35.000</div>
-                    <button class="btn-join" onclick="buyAccess(15)">Beli</button>
+                <div class="pricing-card">
+                    <div class="duration">15 Hari</div>
+                    <div class="price">Rp 35.000</div>
+                    <button class="btn-buy" onclick="buyAccess(15)">Beli</button>
                 </div>
-                <div style="background:#0f1620;padding:14px;border-radius:12px;text-align:center;border:1px solid #2a3340;">
-                    <div style="font-size:20px;font-weight:700;color:#a0d6ff;">30 Hari</div>
-                    <div style="font-size:13px;color:#7a8aa3;margin:4px 0;">Rp 60.000</div>
-                    <button class="btn-join" onclick="buyAccess(30)">Beli</button>
+                <div class="pricing-card">
+                    <div class="duration">30 Hari</div>
+                    <div class="price">Rp 60.000</div>
+                    <button class="btn-buy" onclick="buyAccess(30)">Beli</button>
                 </div>
             </div>
             <div style="text-align:center;font-size:12px;color:#7a8aa3;margin-top:12px;">Pembayaran via WhatsApp • Token dikirim manual</div>
         </div>
 
-        <div class="footer">🐾 Pet Finder Pro v2.0 • Grow a Garden 2</div>
+        <div class="footer">🐾 Pet Finder Pro v2.0 • Data dari GAGAPI • Real-Time</div>
     </div>
 </div>
 
 <script>
 // ============================================================
-// DATA TOKEN (disimpan di local storage)
+// 🔗 KONEKSI KE GAGAPI
 // ============================================================
-let tokens = JSON.parse(localStorage.getItem('petFinderTokens')) || [];
-let currentToken = localStorage.getItem('petFinderCurrentToken') || null;
-let currentDevice = localStorage.getItem('petFinderDevice') || null;
+const GAGAPI_BASE = 'https://gagapi.onrender.com/api/v1';
 
-function getDeviceId() {
-    let device = localStorage.getItem('petFinderDevice');
-    if (!device) {
-        device = 'DEV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-        localStorage.setItem('petFinderDevice', device);
+// ============================================================
+// 📊 AMBIL DATA REAL-TIME DARI GAGAPI
+// ============================================================
+async function fetchGAGAPI(endpoint) {
+    try {
+        const response = await fetch(GAGAPI_BASE + endpoint);
+        if (!response.ok) throw new Error('Gagal ambil data');
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetch GAGAPI:', error);
+        return null;
     }
-    return device;
 }
 
-// ============================================================
-// TOKEN ADMIN YANG VALID
-// ============================================================
-const ADMIN_TOKENS = ['ADMIN-123456', 'ADMIN-654321'];
-
-// ============================================================
-// LOGIN
-// ============================================================
-function loginWithToken(tokenCode) {
-    const device = getDeviceId();
-    const token = tokens.find(t => t.code === tokenCode);
-
-    // Cek apakah token admin
-    if (ADMIN_TOKENS.includes(tokenCode)) {
-        currentToken = tokenCode;
-        localStorage.setItem('petFinderCurrentToken', tokenCode);
-        showApp();
-        return true;
-    }
-
-    if (!token) {
-        document.getElementById('loginError').textContent = '❌ Token tidak valid!';
-        return false;
-    }
-
-    if (token.used) {
-        if (token.usedBy === device) {
-            currentToken = tokenCode;
-            localStorage.setItem('petFinderCurrentToken', tokenCode);
-            showApp();
-            return true;
-        } else {
-            document.getElementById('loginError').textContent = '❌ Token sudah digunakan di device lain!';
-            return false;
+async function updateRealTimeData() {
+    try {
+        // Ambil weather
+        const weatherData = await fetchGAGAPI('/weather');
+        if (weatherData) {
+            document.getElementById('weatherNow').textContent = weatherData.weather || 'Unknown';
         }
-    }
 
-    token.used = true;
-    token.usedBy = device;
-    token.usedAt = Date.now();
-    localStorage.setItem('petFinderTokens', JSON.stringify(tokens));
-    currentToken = tokenCode;
-    localStorage.setItem('petFinderCurrentToken', tokenCode);
-    showApp();
-    return true;
-}
-
-function logout() {
-    if (confirm('Logout?')) {
-        localStorage.removeItem('petFinderCurrentToken');
-        currentToken = null;
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginPage').style.display = 'flex';
-        document.getElementById('tokenInput').value = '';
-        document.getElementById('loginError').textContent = '';
-    }
-}
-
-function showApp() {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    renderPetContent();
-    updateStats();
-    renderTokens();
-    updateExpiry();
-    // Cek admin
-    if (ADMIN_TOKENS.includes(currentToken)) {
-        document.getElementById('adminPanel').style.display = 'block';
-    } else {
-        document.getElementById('adminPanel').style.display = 'none';
-    }
-}
-
-function updateExpiry() {
-    const token = tokens.find(t => t.code === currentToken);
-    if (!token) {
-        // Admin token ga ada expiry
-        if (ADMIN_TOKENS.includes(currentToken)) {
-            document.getElementById('expiryDisplay').textContent = '👑 Admin (tidak expired)';
-            return;
+        // Ambil seed stock
+        const seedsData = await fetchGAGAPI('/stocks/seeds');
+        if (seedsData && Array.isArray(seedsData)) {
+            let totalSeeds = 0;
+            seedsData.forEach(item => { totalSeeds += item.stock || 0; });
+            document.getElementById('seedStock').textContent = totalSeeds.toLocaleString();
         }
-        return;
-    }
-    const now = Date.now();
-    const expiry = token.createdAt + (token.duration * 24 * 60 * 60 * 1000);
-    const remaining = expiry - now;
-    if (remaining <= 0) {
-        document.getElementById('expiryDisplay').textContent = '⏰ Expired!';
-        document.getElementById('expiryDisplay').style.color = '#ff6b6b';
-        return;
-    }
-    const days = Math.floor(remaining / (24 * 60 * 60 * 1000));
-    const hours = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    document.getElementById('expiryDisplay').textContent = `⏱ Sisa ${days}d ${hours}h`;
-    document.getElementById('expiryDisplay').style.color = '#8bffb0';
-}
 
-// ============================================================
-// GENERATE TOKEN
-// ============================================================
-function generateToken() {
-    const duration = parseInt(document.getElementById('tokenDuration').value);
-    const prefix = document.getElementById('tokenPrefix').value || 'TOKEN';
-    const code = prefix + '-' + Math.random().toString(36).substring(2, 10).toUpperCase();
-    const token = {
-        code: code,
-        duration: duration,
-        createdAt: Date.now(),
-        used: false,
-        usedBy: null,
-        usedAt: null
-    };
-    tokens.push(token);
-    localStorage.setItem('petFinderTokens', JSON.stringify(tokens));
-    renderTokens();
-    document.getElementById('tokenPrefix').value = '';
-    alert('✅ Token berhasil dibuat!\n\n' + code + '\nBerlaku ' + duration + ' hari');
-}
+        // Ambil gear stock
+        const gearsData = await fetchGAGAPI('/stocks/gears');
+        if (gearsData && Array.isArray(gearsData)) {
+            let totalGears = 0;
+            gearsData.forEach(item => { totalGears += item.stock || 0; });
+            document.getElementById('gearStock').textContent = totalGears.toLocaleString();
+        }
 
-function renderTokens() {
-    const list = document.getElementById('tokenList');
-    if (tokens.length === 0) {
-        list.innerHTML = '<div style="color:#7a8aa3;font-size:13px;padding:8px 0;">Belum ada token</div>';
-        return;
-    }
-    list.innerHTML = tokens.map((t, i) => {
-        const isUsed = t.used;
-        const status = isUsed ? '<span class="used">❌ Used</span>' : '<span class="valid">✅ Available</span>';
-        return `
-            <div class="token-item">
-                <span class="code">${t.code}</span>
-                <span>${t.duration} hari</span>
-                ${status}
-                <button class="delete-btn" onclick="deleteToken(${i})">✕</button>
-            </div>
-        `;
-    }).join('');
-}
+        // Ambil egg stock
+        const eggsData = await fetchGAGAPI('/stocks/eggs');
+        if (eggsData && Array.isArray(eggsData)) {
+            let totalEggs = 0;
+            eggsData.forEach(item => { totalEggs += item.stock || 0; });
+            document.getElementById('eggStock').textContent = totalEggs.toLocaleString();
+        }
 
-function deleteToken(index) {
-    if (confirm('Hapus token ini?')) {
-        tokens.splice(index, 1);
-        localStorage.setItem('petFinderTokens', JSON.stringify(tokens));
-        renderTokens();
+    } catch (error) {
+        console.error('Error update data:', error);
     }
 }
 
 // ============================================================
-// DATA PET & RENDER
+// 🐾 RENDER PET (Data Pet Masih Manual)
 // ============================================================
 const PET_DATA = {
     special: [
@@ -345,27 +250,84 @@ function renderPetContent() {
     const container = document.getElementById('petContent');
     let html = '';
 
-    html += `
-        <div class="section">
-            <div class="section-header">
-                <span class="section-title">🔍 Pet Finder</span>
-                <span class="section-badge">Special</span>
-            </div>
-            ${PET_DATA.special.map(p => `
-                <div class="pet-row">
-                    <span class="pet-name">${p.icon} ${p.name}</span>
-                    <span>${p.servers} servers</span>
-                    <span class="price">💰 ${p.price}</span>
-                </div>
-            `).join('')}
-        </div>
-    `;
+    html += '<div class="section"><div class="section-header"><span class="section-title">🔍 Pet Finder</span><span class="section-badge">Special</span></div>';
+    PET_DATA.special.forEach(function(p) {
+        html += '<div class="pet-row"><span class="pet-name">' + p.icon + ' ' + p.name + '</span><span>' + p.servers + ' servers</span><span class="price">💰 ' + p.price + '</span></div>';
+    });
+    html += '</div>';
 
-    PET_DATA.pets.forEach(pet => {
-        html += `
-            <div class="section">
-                <div class="section-header">
-                    <span class="section-title">${pet.icon} ${pet.name}</span>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <span class="section-badge">${pet.rarity}</span>
-                        <span class="section-count">${pet.servers} 
+    PET_DATA.pets.forEach(function(pet) {
+        html += '<div class="section"><div class="section-header"><span class="section-title">' + pet.icon + ' ' + pet.name + '</span><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="section-badge">' + pet.rarity + '</span><span class="section-count">' + pet.servers + ' servers</span></div></div>';
+        pet.spawns.forEach(function(s) {
+            var isFull = s.status === 'Full';
+            html += '<div class="pet-row"><span class="pet-name">⏱ ' + s.time + '</span><span class="server-id">' + s.id + '</span><span class="slot">' + s.current + '/' + s.max + '</span>';
+            if (s.note) html += '<span style="color:#ffd700;font-size:11px;">' + s.note + '</span>';
+            html += '<span class="status ' + (isFull ? 'status-full' : 'status-join') + '">' + s.status + '</span>';
+            html += '<button class="btn-join" ' + (isFull ? 'disabled' : '') + ' onclick="joinServer(\'' + s.id + '\')">' + (isFull ? 'Full' : 'Join') + '</button></div>';
+        });
+        html += '</div>';
+    });
+
+    html += '<div class="section"><div class="section-header"><span class="section-title">🐉 Golden Dragonfly</span><span class="section-badge">Mythic</span></div><div class="no-spawn">' + (PET_DATA.dragonfly.spawned ? '✨ Spawned!' : '❌ Not spawned yet') + '<span style="margin-left:12px;color:#7a8aa3;">' + PET_DATA.dragonfly.servers + ' servers</span></div></div>';
+
+    html += '<div class="section"><div class="section-header"><span class="section-title">🧊 Fridge</span><span class="section-badge">Storage</span></div>';
+    PET_DATA.fridge.forEach(function(f) {
+        html += '<div class="pet-row"><span class="pet-name">⏱ ' + f.time + '</span><span class="server-id">' + f.id + '</span><span class="slot">' + f.current + '/' + f.max + '</span><button class="btn-join" onclick="joinServer(\'' + f.id + '\')">Join</button></div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+// ============================================================
+// 🛠 TOKEN SYSTEM (Sama Seperti Sebelumnya)
+// ============================================================
+let tokens = JSON.parse(localStorage.getItem('petFinderTokens')) || [];
+let currentToken = localStorage.getItem('petFinderCurrentToken') || null;
+
+function getDeviceId() {
+    let device = localStorage.getItem('petFinderDevice');
+    if (!device) {
+        device = 'DEV-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem('petFinderDevice', device);
+    }
+    return device;
+}
+
+const ADMIN_TOKENS = ['ADMIN-123456'];
+
+function loginWithToken(tokenCode) {
+    const device = getDeviceId();
+    if (ADMIN_TOKENS.includes(tokenCode)) {
+        currentToken = tokenCode;
+        localStorage.setItem('petFinderCurrentToken', tokenCode);
+        showApp();
+        return true;
+    }
+    const token = tokens.find(t => t.code === tokenCode);
+    if (!token) {
+        document.getElementById('loginError').textContent = '❌ Token tidak valid!';
+        return false;
+    }
+    if (token.used && token.usedBy !== device) {
+        document.getElementById('loginError').textContent = '❌ Token sudah digunakan di device lain!';
+        return false;
+    }
+    if (!token.used) {
+        token.used = true;
+        token.usedBy = device;
+        token.usedAt = Date.now();
+        localStorage.setItem('petFinderTokens', JSON.stringify(tokens));
+    }
+    currentToken = tokenCode;
+    localStorage.setItem('petFinderCurrentToken', tokenCode);
+    showApp();
+    return true;
+}
+
+function logout() {
+    if (confirm('Logout?')) {
+        localStorage.removeItem('petFinderCurrentToken');
+        currentToken = null;
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginPage').style.display = '
